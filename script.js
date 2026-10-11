@@ -144,3 +144,37 @@ if (showcase.dataset.enabled === 'true' && projects.length) {
   }
   sync();
 }
+
+// One-time reveals, grouped by meaning rather than individual words or icons.
+(() => {
+  if (!('IntersectionObserver' in window) || motion.matches) return;
+  const targets = [...document.querySelectorAll(
+    '.about .signature, .about-narrative > p, .aros-note, .affiliations, .personal-copy, .contact-copy > h2, .contact-note, .contact-links, footer, .showcase:not([hidden]) > h2, .showcase:not([hidden]) .project-track'
+  )];
+  const reveal = element => {
+    element.classList.remove('is-waiting');
+    element.dataset.revealed = 'true';
+    observer.unobserve(element);
+  };
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if (entry.isIntersecting) reveal(entry.target); });
+  }, { threshold: 0, rootMargin: '0px 0px -32px 0px' });
+  targets.forEach(element => {
+    element.classList.add('scroll-reveal');
+    const rect = element.getBoundingClientRect();
+    // Existing visible content and deep-link destinations remain readable at load.
+    if (rect.top < innerHeight && rect.bottom > 0 || rect.bottom <= 0) {
+      element.dataset.revealed = 'true';
+    } else {
+      element.classList.add('is-waiting');
+      observer.observe(element);
+    }
+  });
+  document.addEventListener('focusin', event => {
+    const block = event.target.closest('.scroll-reveal.is-waiting');
+    if (block) reveal(block);
+  });
+  motion.addEventListener('change', () => {
+    if (motion.matches) { targets.forEach(reveal); observer.disconnect(); }
+  });
+})();
